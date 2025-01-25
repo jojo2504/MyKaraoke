@@ -1,0 +1,20 @@
+using Microsoft.Data.Sqlite;
+using MyKaraoke.Service.Database;
+using MyKaraoke.Service.Logging;
+
+namespace MyKaraoke.Core.PlaybackManager {
+    public class Song {
+        public int Id { get; set; }
+        public string Title { get; set; }
+        public string VocalHash { get; set; }
+        public string MusicHash { get; set; }
+
+        public byte[] GetVocalData() {
+            return DatabaseHelper.RetrieveFileFromHash(VocalHash);
+        }
+
+        public byte[] GetMusicData() {
+            return DatabaseHelper.RetrieveFileFromHash(MusicHash);
+        }
+    }
+}

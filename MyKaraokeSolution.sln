@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyKaraoke.Core", "MyKaraoke.Core\MyKaraoke.Core.csproj", "{4C52AB84-9C7F-449B-869A-56F0EC433A72}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyKaraoke.Service", "MyKaraoke.Service\MyKaraoke.Service.csproj", "{9F21077B-3905-4BEB-946A-EB9CFABEA813}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyKaraoke.App", "MyKaraoke.App\MyKaraoke.App.csproj", "{5D62FE03-7431-4DA2-8399-04BB54C65047}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4C52AB84-9C7F-449B-869A-56F0EC433A72}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4C52AB84-9C7F-449B-869A-56F0EC433A72}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4C52AB84-9C7F-449B-869A-56F0EC433A72}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4C52AB84-9C7F-449B-869A-56F0EC433A72}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9F21077B-3905-4BEB-946A-EB9CFABEA813}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9F21077B-3905-4BEB-946A-EB9CFABEA813}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9F21077B-3905-4BEB-946A-EB9CFABEA813}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9F21077B-3905-4BEB-946A-EB9CFABEA813}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5D62FE03-7431-4DA2-8399-04BB54C65047}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5D62FE03-7431-4DA2-8399-04BB54C65047}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5D62FE03-7431-4DA2-8399-04BB54C65047}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5D62FE03-7431-4DA2-8399-04BB54C65047}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

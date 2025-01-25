@@ -1,0 +1,13 @@
+CREATE TABLE IF NOT EXISTS Songs (
+    SongId INTEGER PRIMARY KEY AUTOINCREMENT,
+    Title TEXT NOT NULL,
+    VocalHash TEXT NOT NULL,
+    MusicHash TEXT NOT NULL,
+    FOREIGN KEY(VocalHash) REFERENCES Files(FileHash),
+    FOREIGN KEY(MusicHash) REFERENCES Files(FileHash)
+);
+
+CREATE TABLE IF NOT EXISTS Files (
+    FileHash TEXT PRIMARY KEY,
+    FileData BLOB NOT NULL
+);
