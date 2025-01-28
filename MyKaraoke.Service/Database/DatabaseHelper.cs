@@ -40,10 +40,11 @@ namespace MyKaraoke.Service.Database {
             }
         }
 
-        public static void UploadSong(string title, string vocalHash, string musicHash) {
+        public static void UploadSong(string title, string artist, string vocalHash, string musicHash) {
             var command = new SqliteCommand();
-            command.CommandText = "INSERT INTO Songs (Title, VocalHash, MusicHash) VALUES (@Title, @VocalHash, @MusicHash)";
+            command.CommandText = "INSERT INTO Songs (Title, Artist, VocalHash, MusicHash) VALUES (@Title, @Artist, @VocalHash, @MusicHash)";
             command.Parameters.AddWithValue("@Title", title);
+            command.Parameters.AddWithValue("@Artist", artist);
             command.Parameters.AddWithValue("@VocalHash", vocalHash);
             command.Parameters.AddWithValue("@MusicHash", musicHash);
             try {
@@ -66,7 +67,7 @@ namespace MyKaraoke.Service.Database {
                 using (var reader = SQLiteManager.DatabaseExecuteReader(command, successMessage: "Query executed successfully.", warningMessage: "No rows returned.", errorMessage: "Error reading Songs table.")) {
                     if (reader != null) {
                         while (reader.Read()) {
-                            Logger.Log($"SongId: {reader["SongId"]}, Title: {reader["Title"]}, VocalHash: {reader["VocalHash"]}, MusicHash: {reader["MusicHash"]}");
+                            Logger.Log($"SongId: {reader["SongId"]}, Title: {reader["Title"]}, Artist: {reader["Artist"]}, VocalHash: {reader["VocalHash"]}, MusicHash: {reader["MusicHash"]}");
                         }
                     }
                 }

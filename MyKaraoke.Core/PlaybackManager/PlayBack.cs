@@ -8,13 +8,14 @@ using NAudio.Wave.SampleProviders;
 namespace MyKaraoke.Core.PlaybackManager {
     public class Playback {
         public Playlist Playlist;
-        private Song _currentSong;
+        public Song CurrentSong = null;
 
         // Audio readers and output devices
-        private Mp3FileReader _vocalMp3Reader;
-        private Mp3FileReader _musicMp3Reader;
+        public CustomMp3FileReader VocalMp3Reader;
+        private CustomMp3FileReader _musicMp3Reader;
         private readonly WaveOutEvent _vocalOutput;
         private readonly WaveOutEvent _musicOutput;
+        private double BytesPerMillisecond { get; set; }
 
         // Volume properties
         private float _generalVolume = 0.5f;
@@ -28,32 +29,33 @@ namespace MyKaraoke.Core.PlaybackManager {
             _vocalOutput = new WaveOutEvent();
             _musicOutput = new WaveOutEvent();
 
-            foreach (Song song in Playlist.Songs){
+            foreach (Song song in Playlist.Songs) {
                 Logger.Log(song.Title);
             }
         }
-        
+
         public void Play() {
             try {
-                _currentSong ??= Playlist.Next();
-                if (_currentSong == null) return;
-                
                 // Retrieve audio data from database
-                byte[] vocalData = _currentSong.GetVocalData();
-                byte[] musicData = _currentSong.GetMusicData();
+                byte[] vocalData = CurrentSong.GetVocalData();
+                byte[] musicData = CurrentSong.GetMusicData();
 
                 // Stop previous playback
                 _vocalOutput?.Stop();
                 _musicOutput?.Stop();
 
                 // Dispose previous readers if needed
-                _vocalMp3Reader?.Dispose();
-                _vocalMp3Reader?.Dispose();
+                VocalMp3Reader?.Dispose();
+                VocalMp3Reader?.Dispose();
 
                 var vocalMemoryStream = new MemoryStream(vocalData);
-                _vocalMp3Reader = new Mp3FileReader(vocalMemoryStream);
+                Logger.Important($"vocalMemoryStream.Length => {vocalMemoryStream.Length}");
 
-                var vocalPcmStream = new MediaFoundationResampler(_vocalMp3Reader, WaveFormat.CreateIeeeFloatWaveFormat(44100, 2));
+                VocalMp3Reader = new CustomMp3FileReader(vocalMemoryStream, CalculateBytesPerMillisecond(vocalData));
+                Logger.Important($"VocalMp3Reader.TotalTime => {VocalMp3Reader.TotalTime}");
+                Logger.Important($"VocalMp3Reader.TotalTimeInMilliseconds => {VocalMp3Reader.TotalTime.TotalMilliseconds}");
+
+                var vocalPcmStream = new MediaFoundationResampler(VocalMp3Reader, WaveFormat.CreateIeeeFloatWaveFormat(44100, 2));
                 vocalPcmStream.ResamplerQuality = 60;
                 _vocalVolumeProvider = new VolumeSampleProvider(vocalPcmStream.ToSampleProvider());
 
@@ -61,7 +63,7 @@ namespace MyKaraoke.Core.PlaybackManager {
                 _vocalOutput.Play();
 
                 var musicMemoryStream = new MemoryStream(musicData);
-                _musicMp3Reader = new Mp3FileReader(musicMemoryStream);
+                _musicMp3Reader = new CustomMp3FileReader(musicMemoryStream, CalculateBytesPerMillisecond(musicData));
 
                 var musicPcmStream = new MediaFoundationResampler(_musicMp3Reader, WaveFormat.CreateIeeeFloatWaveFormat(44100, 2));
                 musicPcmStream.ResamplerQuality = 60;
@@ -77,48 +79,59 @@ namespace MyKaraoke.Core.PlaybackManager {
                 _musicOutput.PlaybackStopped += OnPlaybackStopped;
 
 
-                Logger.Log($"Now playing: {_currentSong.Title}");
-            } catch (Exception ex) {
+                Logger.Log($"Now playing: {CurrentSong.Title}");
+            }
+            catch (Exception ex) {
                 Logger.Error($"Playback error: {ex.Message}");
             }
         }
 
         public void PlayNext() {
-            _currentSong = Playlist.Next();
-            Logger.Log($"Will play this : {_currentSong.Title}");
-            if (_currentSong != null) {
+            CurrentSong = Playlist.Next();
+            Logger.Log($"Will play this : {CurrentSong.Title}");
+            if (CurrentSong != null) {
                 Play();
             }
         }
 
-        public void Skip(){
-            if (Playlist.Songs.Count == 0){
-                Logger.Log("Playlist is empty.");
+        public void Skip() {
+            if (Playlist.Songs.Count == 0) {
+                Logger.Warning("Playlist is empty.");
                 return;
-            };
+            }
+            ;
             Logger.Log("Skipping current song");
             Stop();
             PlayNext();
         }
 
+        // Method to calculate bytes per millisecond
+        private double CalculateBytesPerMillisecond(byte[] audioData) {
+            using (var memoryStream = new MemoryStream(audioData))
+            using (var tempReader = new Mp3FileReader(memoryStream)) {
+                return (tempReader.WaveFormat.SampleRate * tempReader.WaveFormat.Channels * tempReader.WaveFormat.BitsPerSample / 8.0) / 1000.0;
+            }
+        }
+
         private void OnPlaybackStopped(object sender, StoppedEventArgs e) {
             // Check if both outputs have stopped
             try {
-                if (_vocalMp3Reader != null && _musicMp3Reader != null &&
-                    _vocalMp3Reader.Position >= _vocalMp3Reader.Length &&
+                if (VocalMp3Reader != null && _musicMp3Reader != null &&
+                    VocalMp3Reader.Position >= VocalMp3Reader.Length &&
                     _musicMp3Reader.Position >= _musicMp3Reader.Length) {
-                            
+
                     // Clean up resources for the current song
-                    _vocalMp3Reader?.Dispose();
+                    VocalMp3Reader?.Dispose();
                     _musicMp3Reader?.Dispose();
-                    _vocalMp3Reader = null;
+                    VocalMp3Reader = null;
                     _musicMp3Reader = null;
 
                     // Move to the next song
-                    _currentSong = Playlist.Next();
-                    if (_currentSong != null) {
+                    CurrentSong = Playlist.Next();
+                    if (CurrentSong != null) {
                         Play();
-                    } else {
+                    }
+                    else {
                         // No more songs in the playlist
                         Logger.Log("Playlist is empty.");
                     }
@@ -129,7 +142,7 @@ namespace MyKaraoke.Core.PlaybackManager {
                     Logger.Error($"Playback stopped due to an error: {e.Exception.Message}");
                 }
             }
-            catch(Exception ex) {
+            catch (Exception ex) {
                 Logger.Fatal(ex);
             }
         }

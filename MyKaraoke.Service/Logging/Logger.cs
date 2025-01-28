@@ -35,6 +35,7 @@ namespace MyKaraoke.Service.Logging {
 
         // Convenience methods
         public static void Log(string message) => LogMessage(message, LogEventLevel.Information);
+        public static void Important(string message) => LogMessage(message, LogEventLevel.Important);
 
         public static void Success(string message) => LogMessage(message, LogEventLevel.Success);
 

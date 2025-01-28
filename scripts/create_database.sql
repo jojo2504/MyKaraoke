@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS Songs (
     SongId INTEGER PRIMARY KEY AUTOINCREMENT,
     Title TEXT NOT NULL,
+    Artist TEXT NOT NULL,
     VocalHash TEXT NOT NULL,
     MusicHash TEXT NOT NULL,
     FOREIGN KEY(VocalHash) REFERENCES Files(FileHash),

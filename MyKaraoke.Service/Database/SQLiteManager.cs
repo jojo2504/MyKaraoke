@@ -54,7 +54,7 @@ namespace MyKaraoke.Service.Database{
                 Logger.Log($"Reading script from: {Path.GetFullPath(scriptFilePath)}");
                 string script = File.ReadAllText(scriptFilePath);
 
-                Logger.Log($"Connection to: {connectionString}");
+                Logger.Important($"Connection to: {connectionString}");
                 using var connection = new SqliteConnection(connectionString);
                 connection.Open();
 
@@ -79,9 +79,8 @@ namespace MyKaraoke.Service.Database{
         }
 
         public static void ResetDatabase() {
-            Logger.Log("Resetting database...");
+            Logger.Important("Resetting database...");
             var scriptPath = Path.Combine(SolutionRoot, "scripts/reset_database.sql");
-            Logger.Log($"Reset database script path => {scriptPath}");
             
             ExecuteDatabaseScript(scriptPath, "Resetted database");
             if (!File.Exists(scriptPath)) {
@@ -92,9 +91,9 @@ namespace MyKaraoke.Service.Database{
             Logger.Success("Recreated the database");
         }
 
-        public static void DatabaseExecuteCommand(SqliteCommand command, string successMessage="", string errorMessage="") {
+        public static void DatabaseExecuteCommand(SqliteCommand command, string successMessage="Query executed successfully.", string errorMessage="") {
             Logger.Log($"Connecting to: {connectionString}");
-            Logger.Log($"Command: {command.CommandText}");
+            Logger.Important($"Command: {command.CommandText}");
 
             try {
                 using var connection = new SqliteConnection(connectionString);
@@ -109,9 +108,9 @@ namespace MyKaraoke.Service.Database{
             }
         }
 
-        public static object? DatabaseExecuteScalar(SqliteCommand command, string successMessage="", string warningMessage="", string errorMessage = "") {
+        public static object? DatabaseExecuteScalar(SqliteCommand command, string successMessage="Query executed successfully.", string warningMessage="", string errorMessage = "") {
             Logger.Log($"Connecting to: {connectionString}");
-            Logger.Log($"Command: {command.CommandText}");
+            Logger.Important($"Command: {command.CommandText}");
         
             try {
                 using var connection = new SqliteConnection(connectionString);
@@ -133,9 +132,9 @@ namespace MyKaraoke.Service.Database{
             }
         }
 
-        public static SqliteDataReader? DatabaseExecuteReader(SqliteCommand command, string successMessage="", string warningMessage="", string errorMessage="") {
+        public static SqliteDataReader? DatabaseExecuteReader(SqliteCommand command, string successMessage="Query executed successfully.", string warningMessage="", string errorMessage="") {
             Logger.Log($"Connecting to: {connectionString}");
-            Logger.Log($"Command: {command.CommandText}");
+            Logger.Important($"Command: {command.CommandText}");
             try {
                 var connection = new SqliteConnection(connectionString);
                 connection.Open();

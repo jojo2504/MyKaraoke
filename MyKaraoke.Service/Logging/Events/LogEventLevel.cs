@@ -39,5 +39,11 @@ namespace MyKaraoke.Service.Logging.Events {
         /// When logic has returned the expected outcome
         /// </summary>
         Success,
+        
+        /// <summary>
+        /// Any important logs that should be highlighted,
+        /// Is an extend of information
+        /// </summary>
+        Important,
     }
 }
