@@ -6,10 +6,10 @@ using static MyKaraoke.Service.EnvironmentSetup.Constants;
 
 namespace MyKaraoke.Service.Database {
     public static class FileHasher {
-        private static string GetFilePathFromHash(string hash) {
+        public static string GetFilePathFromHash(string hash) {
             string subDir1 = hash.Substring(0, 2); // First 2 characters
             string subDir2 = hash.Substring(2, 2); // Next 2 characters
-            string fileDir = Path.Combine(SongsPath, subDir1, subDir2);
+            string fileDir = Path.Combine(FilesPath, subDir1, subDir2);
             Directory.CreateDirectory(fileDir);  // Ensure directories exist
 
             Logger.Log(Path.Combine(fileDir, hash));
