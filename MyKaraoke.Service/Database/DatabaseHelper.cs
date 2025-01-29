@@ -4,34 +4,26 @@ using static MyKaraoke.Service.EnvironmentSetup.Constants;
 
 namespace MyKaraoke.Service.Database {
     public static class DatabaseHelper {
-        private static readonly string StorageRoot = SongsPath; // appdata/roaming/MyKaraoke/Songs
+        private static readonly string StorageRoot = FilesPath; // appdata/roaming/MyKaraoke/Songs
 
-        public static byte[] RetrieveFileFromHash(string fileHash) {
-            byte[] fileData = null;
-            var command = new SqliteCommand();
-
-            command.CommandText = "SELECT FileData FROM Files WHERE FileHash = @Hash";
-            command.Parameters.AddWithValue("@Hash", fileHash);
-
+        public static byte[] RetrieveDataFromHash(string fileHash) {
+            var path = FileHasher.GetFilePathFromHash(fileHash);
+            Logger.Important($"PATH => {path}");
+            Logger.Important($"PATH => {path}");
+            Logger.Important($"PATH => {path}");
             try {
-                using (var reader = SQLiteManager.DatabaseExecuteReader(command)) {
-                    if (reader != null && reader.Read()) {
-                        fileData = reader["FileData"] as byte[];
-                    }
-                }
+                return File.ReadAllBytes(path);
             }
             catch (Exception ex) {
-                Logger.Error($"Error retrieving file: {ex.Message}");
+                Logger.Error($"Error reading file {path}: {ex.Message}");
+                return null;
             }
-
-            return fileData;
         }
 
-        public static void InsertFileToDatabase(string hash, byte[] fileData) {
+        public static void InsertFileHashToDatabase(string hash) {
             var command = new SqliteCommand();
-            command.CommandText = "INSERT OR IGNORE INTO Files (FileHash, FileData) VALUES (@Hash, @Data)";
+            command.CommandText = "INSERT OR IGNORE INTO Files (FileHash) VALUES (@Hash)";
             command.Parameters.AddWithValue("@Hash", hash);
-            command.Parameters.AddWithValue("@Data", fileData);
             try {
                 SQLiteManager.DatabaseExecuteCommand(command);
             }

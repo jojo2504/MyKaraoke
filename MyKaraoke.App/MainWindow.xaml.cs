@@ -34,7 +34,7 @@ namespace MyKaraokeApp {
             Logger.Log($"BaseAppDataPath => {BaseAppDataPath}");
             Logger.Log($"LogsPath => {LogsPath}");
             Logger.Log($"DatabasePath => {DatabasePath}");
-            Logger.Log($"SongsPath => {SongsPath}");
+            Logger.Log($"FilesPath => {FilesPath}");
             Logger.Log($"SolutionRoot => {SolutionRoot}");
             Logger.Log($"Received {args.Length} argument(s).");
             foreach (var arg in args) {
@@ -131,12 +131,12 @@ namespace MyKaraokeApp {
                 byte[] musicData = File.ReadAllBytes(_selectedMusicPath);
 
                 // Insert vocal and music files into the database
-                DatabaseHelper.InsertFileToDatabase(_vocalHash, vocalData);
+                DatabaseHelper.InsertFileHashToDatabase(_vocalHash);
                 FileHasher.SaveFileToDisk(_vocalHash, vocalData);
                 Logger.Success("Inserted vocalHash and vocalData to database and directory");
 
                 FileHasher.SaveFileToDisk(_musicHash, musicData);
-                DatabaseHelper.InsertFileToDatabase(_musicHash, musicData);
+                DatabaseHelper.InsertFileHashToDatabase(_musicHash);
                 Logger.Success("Inserted musicHash and musicData to database and directory");
 
                 // Insert the song metadata (name, vocal hash, music hash) into the database
