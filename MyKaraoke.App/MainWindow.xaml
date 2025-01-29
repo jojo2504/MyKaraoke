@@ -317,6 +317,7 @@
                     </Border>
 
                     <!-- Song Library -->
+                    <!-- Song Library -->
                     <Border Grid.Row="1"
                             Background="#1E1E3A"
                             BorderBrush="#3A3A5A"
@@ -348,10 +349,13 @@
                                 </ListBox.ItemTemplate>
                                 <ListBox.ContextMenu>
                                     <ContextMenu Style="{StaticResource DreamContextMenu}">
+                                        <!-- Bind DataContext to the ListBoxItem's DataContext -->
                                         <MenuItem Header="Add to Playlist"
-                                                  Click="AddToPlaylist_Click"/>
+                                                  Click="AddToPlaylist_Click"
+                                                  DataContext="{Binding PlacementTarget.SelectedItem, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                                         <MenuItem Header="Remove"
-                                                  Click="RemoveSong_Click"/>
+                                                  Click="RemoveSong_Click"
+                                                  DataContext="{Binding PlacementTarget.SelectedItem, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                                     </ContextMenu>
                                 </ListBox.ContextMenu>
                             </ListBox>
@@ -415,10 +419,11 @@
 
                 <Button x:Name="PauseResumeButton"
                         Style="{StaticResource DreamButton}"
-                        Content="Pause"
+                        Content="Pause/Resume"
                         Width="120"
                         Height="40"
-                        Margin="0,0,15,0"/>
+                        Margin="0,0,15,0"
+                        Click="PauseResume_Click"/>
 
                 <Button x:Name="SkipButton"
                         Style="{StaticResource DreamButton}"

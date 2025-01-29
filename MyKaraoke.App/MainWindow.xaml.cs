@@ -12,7 +12,8 @@ using System.Windows.Threading;
 using MyKaraoke.Service.Lyrics;
 using System.Windows.Media;
 using System.Globalization; // For CultureInfo
-using System.Windows.Data; // For IValueConverter
+using System.Windows.Data;
+using Microsoft.VisualBasic.Logging; // For IValueConverter
 
 namespace MyKaraokeApp {
     public partial class MainWindow : Window {
@@ -301,16 +302,41 @@ namespace MyKaraokeApp {
             }
         }
 
-        private void AddToPlaylist_Click(object sender, RoutedEventArgs e){
+        private void AddToPlaylist_Click(object sender, RoutedEventArgs e) {
             Logger.Log("AddToPlaylist_Click");
+            var menuItem = sender as MenuItem;
+            if (menuItem == null) {
+                Logger.Log("Sender is not a MenuItem");
+                return;
+            }
+            // Get the DataContext of the MenuItem (the song that was right-clicked)
+            var selectedSong = menuItem.DataContext as Song;
+            if (selectedSong == null) {
+                Logger.Log("No song selected");
+                return;
+            }
+            // Add the selected song to the playlist
+            _playlist.Songs.Add(selectedSong);
+            Logger.Log($"Added '{selectedSong.Title}' to the playlist via context menu.");
         }
 
-        private void RemoveSong_Click(object sender, RoutedEventArgs e){
+        private void RemoveSong_Click(object sender, RoutedEventArgs e) {
             Logger.Log("RemoveSong_Click");
         }
 
-        private void DeleteSongButton(object sender, RoutedEventArgs e){
+        private void DeleteSongButton(object sender, RoutedEventArgs e) {
             Logger.Log("DeleteSongButton");
+        }
+
+        private void PauseResume_Click(object sender, RoutedEventArgs e) {
+            if (_playback.IsPaused) {
+                _playback.Resume();
+                _playback.IsPaused = false;
+            }
+            else {
+                _playback.Pause();
+                _playback.IsPaused = true;
+            }
         }
     }
 }

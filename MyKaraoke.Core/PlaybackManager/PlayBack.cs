@@ -9,6 +9,7 @@ namespace MyKaraoke.Core.PlaybackManager {
     public class Playback {
         public Playlist Playlist;
         public Song CurrentSong = null;
+        public bool IsPaused = false;
 
         // Audio readers and output devices
         public CustomMp3FileReader VocalMp3Reader;
@@ -161,6 +162,18 @@ namespace MyKaraoke.Core.PlaybackManager {
             catch (Exception ex) {
                 Logger.Error(ex.Message);
             }
+        }
+
+        public void Resume(){
+            Logger.Log("Resuming the song");
+            _vocalOutput?.Play();
+            _musicOutput?.Play();
+        }
+
+        public void Pause(){
+            Logger.Log("Pausing the song");
+            _vocalOutput?.Pause();
+            _musicOutput?.Pause();
         }
 
         public void SetGeneralVolume(float volume) {
