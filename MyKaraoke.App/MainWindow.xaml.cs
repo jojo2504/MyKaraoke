@@ -13,7 +13,9 @@ using MyKaraoke.Service.Lyrics;
 using System.Windows.Media;
 using System.Globalization; // For CultureInfo
 using System.Windows.Data;
-using Microsoft.VisualBasic.Logging; // For IValueConverter
+using Microsoft.VisualBasic.Logging;
+using MyKaraoke.Service.EnvironmentSetup;
+using Microsoft.Data.Sqlite; // For IValueConverter
 
 namespace MyKaraokeApp {
     public partial class MainWindow : Window {
@@ -41,6 +43,7 @@ namespace MyKaraokeApp {
                 Logger.Log($"Argument: {arg}");
             }
             if (args.Length > 0 && args[0] == "--reset") {
+                Helper.ResetFileDirectory();
                 SQLiteManager.ResetDatabase();
             }
 
@@ -133,20 +136,22 @@ namespace MyKaraokeApp {
                 // Insert vocal and music files into the database
                 DatabaseHelper.InsertFileHashToDatabase(_vocalHash);
                 FileHasher.SaveFileToDisk(_vocalHash, vocalData);
-                Logger.Success("Inserted vocalHash and vocalData to database and directory");
+                Logger.Log("Inserted vocalHash and vocalData to database and directory");
 
-                FileHasher.SaveFileToDisk(_musicHash, musicData);
                 DatabaseHelper.InsertFileHashToDatabase(_musicHash);
-                Logger.Success("Inserted musicHash and musicData to database and directory");
+                FileHasher.SaveFileToDisk(_musicHash, musicData);
+                Logger.Log("Inserted musicHash and musicData to database and directory");
+
+                // Call this after insert
+                if (!DatabaseHelper.FileHashExists(_musicHash) || !DatabaseHelper.FileHashExists(_vocalHash)) {
+                    Logger.Error("File hash was not inserted properly!");
+                    return;
+                }
 
                 // Insert the song metadata (name, vocal hash, music hash) into the database
                 DatabaseHelper.UploadSong(SongNameTextBox.Text, ArtistNameTextBox.Text, _vocalHash, _musicHash);
-                Logger.Success("Uploaded song in database");
 
-                // Refresh Song List
-                Logger.Log("Refreshing song list view");
                 SongListView.Items.Refresh();
-                Logger.Success("");
 
                 // Reset fields after upload
                 SongNameTextBox.Text = "";

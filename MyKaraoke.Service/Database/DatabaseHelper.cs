@@ -22,7 +22,7 @@ namespace MyKaraoke.Service.Database {
 
         public static void InsertFileHashToDatabase(string hash) {
             var command = new SqliteCommand();
-            command.CommandText = "INSERT OR IGNORE INTO Files (FileHash) VALUES (@Hash)";
+            command.CommandText = "INSERT OR REPLACE INTO Files (FileHash) VALUES (@Hash)";
             command.Parameters.AddWithValue("@Hash", hash);
             try {
                 SQLiteManager.DatabaseExecuteCommand(command);
@@ -30,6 +30,19 @@ namespace MyKaraoke.Service.Database {
             catch (Exception ex) {
                 Logger.Error(ex);
             }
+        }
+
+        public static bool FileHashExists(string hash) {
+            var command = new SqliteCommand();
+            command.CommandText = "SELECT COUNT(*) FROM Files WHERE FileHash = @Hash";
+            command.Parameters.AddWithValue("@Hash", hash);
+
+            object? result = SQLiteManager.DatabaseExecuteScalar(command);
+            if (result != null && Convert.ToInt32(result) > 0) {
+                // The file hash exists in the database
+                return true;
+            }
+            return false;
         }
 
         public static void UploadSong(string title, string artist, string vocalHash, string musicHash) {
@@ -40,16 +53,14 @@ namespace MyKaraoke.Service.Database {
             command.Parameters.AddWithValue("@VocalHash", vocalHash);
             command.Parameters.AddWithValue("@MusicHash", musicHash);
             try {
-                SQLiteManager.DatabaseExecuteCommand(command);
+                SQLiteManager.DatabaseExecuteCommand(command, successMessage: $"Song '{title}' uploaded successfully.");
             }
             catch (Exception ex) {
                 Logger.Error($"Error uploading song: {ex.Message}");
             }
-            Logger.Log($"Song '{title}' uploaded successfully.");
         }
 
         public static void PrintDatabase() {
-            Logger.Log("=== Songs Table ===");
 
             var command = new SqliteCommand {
                 CommandText = "SELECT * FROM Songs"
@@ -57,6 +68,7 @@ namespace MyKaraoke.Service.Database {
             try {
                 // Reusing DatabaseExecuteReader to get the data
                 using (var reader = SQLiteManager.DatabaseExecuteReader(command, successMessage: "Query executed successfully.", warningMessage: "No rows returned.", errorMessage: "Error reading Songs table.")) {
+                    Logger.Log("=== Songs Table ===");
                     if (reader != null) {
                         while (reader.Read()) {
                             Logger.Log($"SongId: {reader["SongId"]}, Title: {reader["Title"]}, Artist: {reader["Artist"]}, VocalHash: {reader["VocalHash"]}, MusicHash: {reader["MusicHash"]}");

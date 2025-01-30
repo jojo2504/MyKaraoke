@@ -26,7 +26,7 @@ namespace MyKaraoke.Core.Lyrics {
             var regex = new Regex(@"\[(\d{2}:\d{2}\.\d{2})\](.*)");
 
             var wordMatches = regex.Matches(lyricsContent);
-            if (wordMatches.Count == 0){
+            if (wordMatches.Count == 0) {
                 regex = new Regex(@"\[(\d{2}:\d{2}\.\d{3})\](.*)");
                 wordMatches = regex.Matches(lyricsContent);
             }
@@ -34,7 +34,7 @@ namespace MyKaraoke.Core.Lyrics {
 
             for (int i = 0; i < wordMatches.Count; i++) {
                 var match = wordMatches[i];
-                if (i == 0){
+                if (i == 0) {
                     Logger.Log($"{match.Groups[0].Value}".Trim());
                     Logger.Log($"{match.Groups[1].Value}");
                     Logger.Log($"{match.Groups[2].Value}".Trim());
@@ -44,8 +44,8 @@ namespace MyKaraoke.Core.Lyrics {
                     string text = match.Groups[2].Value.Trim();
                     TimeSpan endTime;
 
-                    if (i < wordMatches.Count-1) {
-                        if (!TimeSpan.TryParse("0:" + wordMatches[i+1].Groups[1].Value, out endTime)) {
+                    if (i < wordMatches.Count - 1) {
+                        if (!TimeSpan.TryParse("0:" + wordMatches[i + 1].Groups[1].Value, out endTime)) {
                             endTime = startTime + TimeSpan.FromMilliseconds(500);
                         }
                     }

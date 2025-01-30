@@ -19,6 +19,12 @@ namespace MyKaraoke.Service.EnvironmentSetup {
             return directory;
         }
 
+        public static void ResetFileDirectory(){
+            if (Directory.Exists(FilesPath)){
+                Directory.Delete(FilesPath, true);
+            }
+        }
+
         static ConfigLoader() {
             try {
                 DirectoryInfo solutionRoot = TryGetSolutionDirectoryInfo();

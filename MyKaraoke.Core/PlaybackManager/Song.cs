@@ -7,15 +7,15 @@ namespace MyKaraoke.Core.PlaybackManager {
         public int Id { get; set; }
         public string Title { get; set; }
         public string Artist { get; set; }
-        public string VocalFileHash { get; set; }
-        public string MusicFileHash { get; set; }
+        public string VocalHash { get; set; }
+        public string MusicHash { get; set; }
 
         public byte[] GetVocalData() {
-            return DatabaseHelper.RetrieveDataFromHash(VocalFileHash);
+            return DatabaseHelper.RetrieveDataFromHash(VocalHash);
         }
 
         public byte[] GetMusicData() {
-            return DatabaseHelper.RetrieveDataFromHash(MusicFileHash);
+            return DatabaseHelper.RetrieveDataFromHash(MusicHash);
         }
     }
 }
