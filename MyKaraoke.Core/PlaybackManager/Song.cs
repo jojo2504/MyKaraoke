@@ -9,6 +9,7 @@ namespace MyKaraoke.Core.PlaybackManager {
         public string Artist { get; set; }
         public string VocalHash { get; set; }
         public string MusicHash { get; set; }
+        public string LRCHash { get; set; }
 
         public byte[] GetVocalData() {
             return DatabaseHelper.RetrieveDataFromHash(VocalHash);
@@ -16,6 +17,9 @@ namespace MyKaraoke.Core.PlaybackManager {
 
         public byte[] GetMusicData() {
             return DatabaseHelper.RetrieveDataFromHash(MusicHash);
+        }
+        public byte[] GetLRCData() {
+            return DatabaseHelper.RetrieveDataFromHash(LRCHash);
         }
     }
 }

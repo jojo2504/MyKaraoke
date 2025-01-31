@@ -64,13 +64,12 @@ namespace MyKaraoke.Core.Lyrics {
 
             Lines.Sort((a, b) => a.StartTime.CompareTo(b.StartTime));
             Logger.Log($"Lines parsed: {Lines.Count}");
-            if (Lines.Count == 0) {
-                Logger.Fatal("xd");
-            }
 
-            Logger.Important("Printing all lines in lines");
-            foreach (var line in Lines) {
-                Logger.Log($"{line.StartTime}: {line.Text}");
+            if (Lines.Count > 0) {
+                Logger.Important("Printing all lines in lines");
+                foreach (var line in Lines) {
+                    Logger.Log($"{line.StartTime}: {line.Text}");
+                }
             }
         }
 

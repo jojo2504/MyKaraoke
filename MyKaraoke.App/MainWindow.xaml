@@ -353,6 +353,9 @@
                                         <MenuItem Header="Add to Playlist"
                                                   Click="AddToPlaylist_Click"
                                                   DataContext="{Binding PlacementTarget.SelectedItem, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                        <MenuItem Header="Modify Song"
+                                                  Click="ModifySong_Click"
+                                                  DataContext="{Binding PlacementTarget.SelectedItem, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                                         <MenuItem Header="Remove"
                                                   Click="RemoveSong_Click"
                                                   DataContext="{Binding PlacementTarget.SelectedItem, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>

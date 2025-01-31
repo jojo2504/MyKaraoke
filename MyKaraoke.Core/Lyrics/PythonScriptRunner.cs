@@ -4,12 +4,8 @@ using System.Diagnostics;
 namespace MyKaraoke.Service.Lyrics {
     public class PythonScriptRunner {
         public static string ExecutePythonScriptWithCPython(string scriptPath, string[] arguments) {
-            Logger.Important("Python script entry:");
-            Logger.Important($"scriptPath => {scriptPath}");
-            Logger.Important($"arguments[0] => {arguments[0]}");
-            Logger.Important($"arguments[1] => {arguments[1]}");
-            Logger.Important($"script => python {scriptPath} {string.Join(' ', arguments)}");
-            Logger.Warning($"\"{scriptPath}\" {string.Join(" ", arguments.Select(arg => $"\"{arg}\""))}");
+            Logger.Log("Python script entry:");
+            Logger.Log($"script => python {scriptPath} {string.Join(' ', arguments)}");
 
             // Set up the process start information to run Python with your script
             var startInfo = new ProcessStartInfo {

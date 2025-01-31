@@ -8,9 +8,6 @@ namespace MyKaraoke.Service.Database {
 
         public static byte[] RetrieveDataFromHash(string fileHash) {
             var path = FileHasher.GetFilePathFromHash(fileHash);
-            Logger.Important($"PATH => {path}");
-            Logger.Important($"PATH => {path}");
-            Logger.Important($"PATH => {path}");
             try {
                 return File.ReadAllBytes(path);
             }
@@ -45,13 +42,14 @@ namespace MyKaraoke.Service.Database {
             return false;
         }
 
-        public static void UploadSong(string title, string artist, string vocalHash, string musicHash) {
+        public static void UploadSong(string title, string artist, string vocalHash, string musicHash, string LRCHash) {
             var command = new SqliteCommand();
-            command.CommandText = "INSERT INTO Songs (Title, Artist, VocalHash, MusicHash) VALUES (@Title, @Artist, @VocalHash, @MusicHash)";
+            command.CommandText = "INSERT INTO Songs (Title, Artist, VocalHash, MusicHash, LRCHash) VALUES (@Title, @Artist, @VocalHash, @MusicHash, @LRCHash)";
             command.Parameters.AddWithValue("@Title", title);
             command.Parameters.AddWithValue("@Artist", artist);
             command.Parameters.AddWithValue("@VocalHash", vocalHash);
             command.Parameters.AddWithValue("@MusicHash", musicHash);
+            command.Parameters.AddWithValue("@LRCHash", LRCHash);
             try {
                 SQLiteManager.DatabaseExecuteCommand(command, successMessage: $"Song '{title}' uploaded successfully.");
             }
@@ -76,8 +74,6 @@ namespace MyKaraoke.Service.Database {
                     }
                 }
             }
-
-
             catch (Exception exception){
                 Logger.Error(exception);
             }

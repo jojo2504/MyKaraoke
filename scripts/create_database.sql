@@ -4,9 +4,11 @@ CREATE TABLE IF NOT EXISTS Songs (
     Artist TEXT NOT NULL,
     VocalHash TEXT NOT NULL,
     MusicHash TEXT NOT NULL,
+    LRCHash TEXT,
     FOREIGN KEY(VocalHash) REFERENCES Files(FileHash),
     FOREIGN KEY(MusicHash) REFERENCES Files(FileHash)
-);
+    FOREIGN KEY(LRCHash) REFERENCES Files(FileHash)
+);  
 
 CREATE TABLE IF NOT EXISTS Files (
     FileHash TEXT PRIMARY KEY

@@ -13,9 +13,10 @@ using MyKaraoke.Service.Lyrics;
 using System.Windows.Media;
 using System.Globalization; // For CultureInfo
 using System.Windows.Data;
-using Microsoft.VisualBasic.Logging;
 using MyKaraoke.Service.EnvironmentSetup;
-using Microsoft.Data.Sqlite; // For IValueConverter
+using Microsoft.Data.Sqlite;
+using System.Text;
+using System.Threading.Tasks; // For IValueConverter
 
 namespace MyKaraokeApp {
     public partial class MainWindow : Window {
@@ -27,7 +28,6 @@ namespace MyKaraokeApp {
         private string _vocalHash = "";
         private string _musicHash = "";
         private string _lastLyricLineText = "";
-        private LyricSync _lyricSync = new LyricSync();
 
         // Default constructor required by WPF (parameterless)
         public MainWindow() : this([]) {
@@ -67,15 +67,20 @@ namespace MyKaraokeApp {
 
         private void UpdateLibrary() {
             DatabaseSongsListView.ItemsSource = Library.GetAllSongs();
-            foreach (Song song in Library.GetAllSongs()) {
-                Logger.Important($"SONG INFO {song.Title} {song.Artist}");
-            }
             Logger.Success("Updated Library");
         }
+
+        private void AddSongToLibrary(Song song) {
+            Library.AddSongToLibrary(song);
+            DatabaseSongsListView.ItemsSource = Library.Songs;
+        }
+
 
         private void InitializePlayback() {
             _playlist = new Playlist();
             _playback = new Playback(_playlist);
+            _playback.CurrentSongChanged += OnCurrentSongChanged;
+
             SongListView.ItemsSource = _playlist.Songs;
         }
 
@@ -93,6 +98,16 @@ namespace MyKaraokeApp {
             MusicVolumeSlider.ValueChanged += (s, e) =>
                 _playback?.SetMusicVolume((float)MusicVolumeSlider.Value / 100);
         }
+
+        private void OnCurrentSongChanged(object sender, EventArgs e) {
+            // Perform any actions when the current song changes
+            Logger.Log($"Current song changed: {_playback.CurrentSong?.Title}");
+
+            // If you want to sync lyrics when the song changes, call SetupLyricSync
+            LoadLyrics(_playback.CurrentSong);
+            SetupLyricSync();
+        }
+
 
         private void UploadFile(bool isVocal) {
             OpenFileDialog openFileDialog = new OpenFileDialog {
@@ -118,7 +133,7 @@ namespace MyKaraokeApp {
             }
         }
 
-        private void AddSongToDatabase() {
+        private async Task AddSongToDatabase() {
             // Ensure all required fields are filled in
             if (string.IsNullOrEmpty(SongNameTextBox.Text) ||
                 string.IsNullOrEmpty(ArtistNameTextBox.Text) ||
@@ -133,23 +148,12 @@ namespace MyKaraokeApp {
                 byte[] vocalData = File.ReadAllBytes(_selectedVocalPath);
                 byte[] musicData = File.ReadAllBytes(_selectedMusicPath);
 
-                // Insert vocal and music files into the database
-                DatabaseHelper.InsertFileHashToDatabase(_vocalHash);
-                FileHasher.SaveFileToDisk(_vocalHash, vocalData);
-                Logger.Log("Inserted vocalHash and vocalData to database and directory");
-
-                DatabaseHelper.InsertFileHashToDatabase(_musicHash);
-                FileHasher.SaveFileToDisk(_musicHash, musicData);
-                Logger.Log("Inserted musicHash and musicData to database and directory");
-
-                // Call this after insert
-                if (!DatabaseHelper.FileHashExists(_musicHash) || !DatabaseHelper.FileHashExists(_vocalHash)) {
-                    Logger.Error("File hash was not inserted properly!");
-                    return;
-                }
+                ProcessHashData(_vocalHash, vocalData);
+                ProcessHashData(_musicHash, musicData);
+                string LRCHash = await ProcessLyricsAsync();
 
                 // Insert the song metadata (name, vocal hash, music hash) into the database
-                DatabaseHelper.UploadSong(SongNameTextBox.Text, ArtistNameTextBox.Text, _vocalHash, _musicHash);
+                DatabaseHelper.UploadSong(SongNameTextBox.Text, ArtistNameTextBox.Text, _vocalHash, _musicHash, LRCHash);
 
                 SongListView.Items.Refresh();
 
@@ -167,8 +171,38 @@ namespace MyKaraokeApp {
             }
         }
 
+        private void ProcessHashData(string hash, byte[] data) {
+            DatabaseHelper.InsertFileHashToDatabase(hash);
+            FileHasher.SaveFileToDisk(hash, data);
+            Logger.Log("Inserted vocalHash and vocalData to database and directory");
+        }
+
+        async Task<string> ProcessLyricsAsync() {
+            try {
+                Logger.Log("Trying to search for lyrics");
+
+                string scriptPath = Path.Combine(SolutionRoot, "scripts/search_lyrics.py");
+                string[] scriptArguments = new string[] { SongNameTextBox.Text, ArtistNameTextBox.Text };
+
+                string lyrics = await Task.Run(() => PythonScriptRunner.ExecutePythonScriptWithCPython(scriptPath, scriptArguments));
+                byte[] lyricsData = Encoding.UTF8.GetBytes(lyrics);
+                string lyricsHash = FileHasher.ComputeSHA256FromBytes(lyricsData);
+
+                await Task.Run(() => DatabaseHelper.InsertFileHashToDatabase(lyricsHash));
+                await Task.Run(() => FileHasher.SaveFileToDisk(lyricsHash, lyricsData));
+
+                Logger.Success("Successfully inserted lyrics hash and saved lyrics data.");
+
+                return lyricsHash;
+            }
+            catch (Exception ex) {
+                Logger.Error($"Error processing lyrics: {ex.Message}");
+                return null;
+            }
+        }
+
         private void UpdateLyricDisplay(double currentTime) {
-            var currentLyricLine = _lyricSync.GetCurrentLyric(currentTime);
+            var currentLyricLine = _playback.LyricSync.GetCurrentLyric(currentTime);
             if (currentLyricLine != null) {
                 if (currentLyricLine.Text != _lastLyricLineText) {
                     _lastLyricLineText = currentLyricLine.Text;
@@ -196,31 +230,15 @@ namespace MyKaraokeApp {
             DispatcherTimer lyricTimer = new DispatcherTimer {
                 Interval = TimeSpan.FromMilliseconds(100)  // Timer fires every 100 milliseconds
             };
-
-
             lyricTimer.Tick += (s, e) => {
                 if (_playback.VocalMp3Reader != null) {
-                    // Pass the current position to the lyric display method
                     UpdateLyricDisplay(_playback.VocalMp3Reader.CurrentTime.TotalMilliseconds);
                 }
                 else {
-                    Logger.Fatal("_playback.VocalMp3Reader is null");
+                    lyricTimer.Stop();
                 }
             };
-
             lyricTimer.Start();
-        }
-
-        private void LoadLyricsForSong(Song song) {
-            string trackName = song.Title;
-            string artistName = song.Artist;
-
-            string scriptPath = Path.Combine(SolutionRoot, "scripts/search_lyrics.py");
-            string[] scriptArguments = new string[] { trackName, artistName };
-            string processedLyrics = PythonScriptRunner.ExecutePythonScriptWithCPython(scriptPath, scriptArguments);
-
-            // Parse and use the processed lyrics (e.g., update the display)
-            _lyricSync.ParseLyrics(processedLyrics);
         }
 
         // Modify Play method to include lyrics
@@ -236,13 +254,16 @@ namespace MyKaraokeApp {
             }
             else {
                 Logger.Warning("A song is already playing");
-                Logger.Log("Stopping instead (temporary)");
-                _playback.Stop();
                 return;
             }
-            LoadLyricsForSong(_playback.CurrentSong);
+
             _playback.Play();
-            SetupLyricSync();
+        }
+
+        public void LoadLyrics(Song song) {
+            byte[] LRCData = song.GetLRCData();
+            string lyrics = Encoding.UTF8.GetString(LRCData);
+            _playback.LyricSync.ParseLyrics(lyrics);
         }
 
         private void DeleteSongButton_Click(object sender, RoutedEventArgs e) {
@@ -250,17 +271,6 @@ namespace MyKaraokeApp {
                 _playlist.RemoveSong(selectedSong);
                 SongListView.Items.Refresh();
                 // Optional: Add database delete method here
-            }
-        }
-
-        private void AddToPlaylistButton_Click(object sender, RoutedEventArgs e) {
-            // Get the button that was clicked
-            Button button = sender as Button;
-
-            // Get the data context (Song) of the button's parent
-            if (button?.DataContext is Song selectedSong) {
-                // Add the song to the playlist
-                _playlist.AddSong(selectedSong);
             }
         }
 
@@ -308,7 +318,6 @@ namespace MyKaraokeApp {
         }
 
         private void AddToPlaylist_Click(object sender, RoutedEventArgs e) {
-            Logger.Log("AddToPlaylist_Click");
             var menuItem = sender as MenuItem;
             if (menuItem == null) {
                 Logger.Log("Sender is not a MenuItem");
@@ -342,6 +351,10 @@ namespace MyKaraokeApp {
                 _playback.Pause();
                 _playback.IsPaused = true;
             }
+        }
+
+        private void ModifySong_Click(object sender, RoutedEventArgs e) {
+            Logger.Log("ModifySong_Click");
         }
     }
 }
