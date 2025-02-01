@@ -3,18 +3,6 @@ using MyKaraoke.Service.Logging;
 using System.Text.RegularExpressions;
 
 namespace MyKaraoke.Core.Lyrics {
-    public class LyricLine {
-        public string Text { get; set; }
-        public TimeSpan StartTime { get; set; }
-        public TimeSpan Duration { get; set; }
-        public bool IsHighlighted { get; set; }
-
-        public bool IsActive(TimeSpan currentPosition) {
-            return currentPosition >= StartTime &&
-                   currentPosition <= (StartTime + Duration);
-        }
-    }
-
     public class LyricSync {
         public List<LyricLine> Lines { get; private set; } = new List<LyricLine>();
 
@@ -86,6 +74,16 @@ namespace MyKaraoke.Core.Lyrics {
             }
 
             // If no lyric is found, return null
+            return null;
+        }
+
+        public LyricLine GetNextLyric(double currentTime) {
+            var nextLyric = Lines.FirstOrDefault(l =>
+                l.StartTime.TotalMilliseconds > currentTime);
+            if (nextLyric != null) {
+                nextLyric.IsHighlighted = true;
+                return nextLyric;
+            }
             return null;
         }
     }

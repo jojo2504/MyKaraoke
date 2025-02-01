@@ -10,7 +10,6 @@ using MyKaraoke.Core.Lyrics;
 namespace MyKaraoke.Core.PlaybackManager {
     public class Playback {
         public Playlist Playlist;
-        
         private Song _currentSong;
         public Song CurrentSong {
             get => _currentSong;
@@ -93,8 +92,12 @@ namespace MyKaraoke.Core.PlaybackManager {
                 UpdateVolume();
 
                 // Attach event handlers for playback stopped
-                _vocalOutput.PlaybackStopped += OnPlaybackStopped;
-                _musicOutput.PlaybackStopped += OnPlaybackStopped;
+                if (VocalMp3Reader.TotalTime < _musicMp3Reader.TotalTime) {
+                    _vocalOutput.PlaybackStopped += OnPlaybackStopped;
+                }
+                else {
+                    _musicOutput.PlaybackStopped += OnPlaybackStopped;
+                }
 
                 Logger.Log($"Now playing: {CurrentSong.Title}");
             }
@@ -136,14 +139,16 @@ namespace MyKaraoke.Core.PlaybackManager {
                 if (VocalMp3Reader != null && _musicMp3Reader != null &&
                     VocalMp3Reader.Position >= VocalMp3Reader.Length &&
                     _musicMp3Reader.Position >= _musicMp3Reader.Length) {
-
+                    
                     // Clean up resources for the current song
                     VocalMp3Reader?.Dispose();
                     _musicMp3Reader?.Dispose();
                     VocalMp3Reader = null;
                     _musicMp3Reader = null;
+                    
+                    _currentSong = Playlist.Next(); // For some reasons, 'CurrentSong = Playlist.Next()' doesn't work XD
+                    CurrentSong = _currentSong;
 
-                    CurrentSong = Playlist.Next();
                     if (CurrentSong != null) {
                         Play();
                     }
@@ -153,10 +158,9 @@ namespace MyKaraoke.Core.PlaybackManager {
                 }
             }
             catch (Exception ex) {
-                Logger.Fatal(ex);
+                Logger.Fatal($"OnPlaybackStopped CRASH : {ex}");
             }
         }
-
 
         public void Stop() {
             try {

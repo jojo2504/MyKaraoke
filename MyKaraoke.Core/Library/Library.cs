@@ -1,19 +1,25 @@
 using MyKaraoke.Core.PlaybackManager;
 using MyKaraoke.Service.Database;
 using Microsoft.Data.Sqlite;
+using System.Collections.ObjectModel;
 
 namespace MyKaraoke.Core.Library {
     public class Library {
-        public static HashSet<Song> Songs = [];
-        public static HashSet<Song> GetAllSongs() {
-            HashSet<Song> songs = new HashSet<Song>();
+        public static ObservableCollection<Song> Songs = [];
+
+        static Library() {
+            FetchAllSongs();
+        }
+
+        public static void FetchAllSongs() {
+            Songs.Clear();
             var command = new SqliteCommand("SELECT * FROM Songs");
 
             using (var reader = SQLiteManager.DatabaseExecuteReader(command,
                        successMessage: "Query executed successfully.",
                        warningMessage: "No rows returned.")) {
                 while (reader.Read()) {
-                    songs.Add(new Song {
+                    Songs.Add(new Song {
                         Id = reader.GetInt32(0),
                         Title = reader.GetString(1),
                         Artist = reader.GetString(2),
@@ -23,12 +29,18 @@ namespace MyKaraoke.Core.Library {
                     });
                 }
             }
-            HashSet<Song> SongsCache = new HashSet<Song>(songs);
-            return songs;
+        }
+
+        public static ObservableCollection<Song> GetAllSongs() {
+            return Songs;
         }
 
         public static void AddSongToLibrary(Song song){
             Songs.Add(song);
+        }
+
+        public static void RemoveSongFromLibrary(Song song){
+            Songs.Remove(song);
         }
     }
 }

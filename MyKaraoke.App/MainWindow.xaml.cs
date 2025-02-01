@@ -16,7 +16,10 @@ using System.Windows.Data;
 using MyKaraoke.Service.EnvironmentSetup;
 using Microsoft.Data.Sqlite;
 using System.Text;
-using System.Threading.Tasks; // For IValueConverter
+using System.Threading.Tasks;
+using System.Windows.Media.Imaging;
+using System.Windows.Input;
+using System.Windows.Media.Animation; // For IValueConverter
 
 namespace MyKaraokeApp {
     public partial class MainWindow : Window {
@@ -28,6 +31,8 @@ namespace MyKaraokeApp {
         private string _vocalHash = "";
         private string _musicHash = "";
         private string _lastLyricLineText = "";
+        private bool _displayCurrentLyricTextTop = true;
+        private bool _displayedFirstLyricText = false;
 
         // Default constructor required by WPF (parameterless)
         public MainWindow() : this([]) {
@@ -60,13 +65,14 @@ namespace MyKaraokeApp {
         }
 
         private void InitializeListViews() {
-            DatabaseSongsListView.ItemsSource = Library.GetAllSongs();
+            DatabaseSongsListView.ItemsSource = Library.Songs;
             SongListView.ItemsSource = _playlist.Songs;
             Logger.Success("Initialized ListViews");
         }
 
         private void UpdateLibrary() {
-            DatabaseSongsListView.ItemsSource = Library.GetAllSongs();
+            Library.FetchAllSongs();
+            CollectionViewSource.GetDefaultView(DatabaseSongsListView.ItemsSource)?.Refresh();
             Logger.Success("Updated Library");
         }
 
@@ -102,7 +108,8 @@ namespace MyKaraokeApp {
         private void OnCurrentSongChanged(object sender, EventArgs e) {
             // Perform any actions when the current song changes
             Logger.Log($"Current song changed: {_playback.CurrentSong?.Title}");
-
+            CurrentLyricTextBlock.Text = "";
+            NextLyricTextBlock.Text = "";
             // If you want to sync lyrics when the song changes, call SetupLyricSync
             LoadLyrics(_playback.CurrentSong);
             SetupLyricSync();
@@ -202,26 +209,32 @@ namespace MyKaraokeApp {
         }
 
         private void UpdateLyricDisplay(double currentTime) {
-            var currentLyricLine = _playback.LyricSync.GetCurrentLyric(currentTime);
-            if (currentLyricLine != null) {
-                if (currentLyricLine.Text != _lastLyricLineText) {
-                    _lastLyricLineText = currentLyricLine.Text;
-                    Logger.Log($"{currentTime} currentLyric => {currentLyricLine.Text}");
-                }
-                // Update text with styling
-                LyricsTextBlock.Text = currentLyricLine.Text;
+            var displayedLyricLine = _playback.LyricSync.GetCurrentLyric(currentTime);
+            var nextLyricLine = _playback.LyricSync.GetCurrentLyric(currentTime);
 
-                // Optional: Add highlighting or animation
-                LyricsTextBlock.Foreground = currentLyricLine.IsHighlighted
-                    ? Brushes.Red
-                    : Brushes.Black;
+            if (displayedLyricLine != null) {
+                if (displayedLyricLine.Text != _lastLyricLineText) {
+                    _lastLyricLineText = displayedLyricLine.Text;
+                    var timeBeforeFadingOut = displayedLyricLine.Duration.Seconds + nextLyricLine.Duration.Seconds/2;
+                    if (displayedLyricLine.Text != "") {
+                        if (!_displayCurrentLyricTextTop) {
+                            CurrentLyricTextBlock.Text = displayedLyricLine.Text;
+                            StartLyricsAnimation(CurrentLyricTextBlock, timeBeforeFadingOut);
+                        }
+                        else {
+                            NextLyricTextBlock.Text = displayedLyricLine.Text;
+                            StartLyricsAnimation(NextLyricTextBlock, timeBeforeFadingOut);
+                        }
+                        _displayCurrentLyricTextTop = !_displayCurrentLyricTextTop;
+                    }
+                    Logger.Log($"{currentTime} currentLyric => {displayedLyricLine.Text}");
+                }
             }
             else {
                 if (_lastLyricLineText != null) {
                     Logger.Warning($"{currentTime} currentLyric => NULL");
                 }
                 _lastLyricLineText = null;
-                LyricsTextBlock.Text = "Waiting for lyrics...";
             }
         }
 
@@ -290,7 +303,7 @@ namespace MyKaraokeApp {
 
                 var scrollViewer = new ScrollViewer();
                 var textBlock = new TextBlock {
-                    Text = LyricsTextBlock.Text,
+                    Text = CurrentLyricTextBlock.Text,
                     FontSize = 32,
                     TextAlignment = TextAlignment.Center,
                     TextWrapping = TextWrapping.Wrap,
@@ -304,7 +317,7 @@ namespace MyKaraokeApp {
 
                 // Bind the text to keep it synchronized
                 var binding = new System.Windows.Data.Binding("Text") {
-                    Source = LyricsTextBlock,
+                    Source = CurrentLyricTextBlock,
                     Mode = System.Windows.Data.BindingMode.TwoWay,
                     UpdateSourceTrigger = System.Windows.Data.UpdateSourceTrigger.PropertyChanged
                 };
@@ -319,12 +332,8 @@ namespace MyKaraokeApp {
 
         private void AddToPlaylist_Click(object sender, RoutedEventArgs e) {
             var menuItem = sender as MenuItem;
-            if (menuItem == null) {
-                Logger.Log("Sender is not a MenuItem");
-                return;
-            }
             // Get the DataContext of the MenuItem (the song that was right-clicked)
-            var selectedSong = menuItem.DataContext as Song;
+            var selectedSong = menuItem?.DataContext as Song;
             if (selectedSong == null) {
                 Logger.Log("No song selected");
                 return;
@@ -355,6 +364,61 @@ namespace MyKaraokeApp {
 
         private void ModifySong_Click(object sender, RoutedEventArgs e) {
             Logger.Log("ModifySong_Click");
+        }
+
+        private void PlayNow_Click(object sender, RoutedEventArgs e) {
+            var menuItem = sender as MenuItem;
+            var selectedSong = menuItem.DataContext as Song;
+            _playback.CurrentSong = selectedSong;
+            _playback.Play();
+        }
+
+        private void ListBoxItem_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e) {
+            if (sender is ListBoxItem item) {
+                item.IsSelected = true; // Select the item
+            }
+        }
+
+        private void ListBoxItem_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
+            if (sender is ListBoxItem item) {
+                item.IsSelected = true; // Select the item
+            }
+        }
+
+        private void StartLyricsAnimation(TextBlock textBlock, long FadeOutBeginTime) {
+            // Clear the local value first
+            textBlock.ClearValue(UIElement.OpacityProperty);
+
+            var storyboard = new Storyboard();
+
+            var fadeIn = new DoubleAnimation {
+                From = 0,
+                To = 1,
+                Duration = TimeSpan.FromSeconds(0.6),
+                AutoReverse = false,
+                FillBehavior = FillBehavior.HoldEnd
+            };
+
+            var fadeOut = new DoubleAnimation {
+                From = 1,
+                To = 0,
+                Duration = TimeSpan.FromSeconds(0.6),
+                BeginTime = TimeSpan.FromSeconds(FadeOutBeginTime),
+                AutoReverse = false,
+                FillBehavior = FillBehavior.HoldEnd
+            };
+
+            // Add animations to the Storyboard
+            Storyboard.SetTarget(fadeIn, textBlock);
+            Storyboard.SetTargetProperty(fadeIn, new PropertyPath(UIElement.OpacityProperty));
+            storyboard.Children.Add(fadeIn);
+
+            Storyboard.SetTarget(fadeOut, textBlock);
+            Storyboard.SetTargetProperty(fadeOut, new PropertyPath(UIElement.OpacityProperty));
+            storyboard.Children.Add(fadeOut);
+
+            // Start the Storyboard
+            storyboard.Begin();
         }
     }
 }
