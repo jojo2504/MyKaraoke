@@ -1,11 +1,17 @@
-using Microsoft.Data.Sqlite;
 using MyKaraoke.Service.Database;
-using MyKaraoke.Service.Logging;
+using System.Globalization;
 
-namespace MyKaraoke.Core.PlaybackManager {
+namespace MyKaraoke.Service.Models {
     public class Song {
         public int Id { get; set; }
-        public string Title { get; set; }
+        private string _title;
+        public string Title {
+            get => _title;
+            set {
+                // Convert the input to title case
+                _title = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(value.ToLower());
+            }
+        }
         public string Artist { get; set; }
         public string VocalHash { get; set; }
         public string MusicHash { get; set; }

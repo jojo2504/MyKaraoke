@@ -3,6 +3,7 @@ using Microsoft.VisualBasic.Logging;
 using MyKaraoke.Service.Database;
 using MyKaraoke.Service.Logging;
 using System.Collections.ObjectModel;
+using MyKaraoke.Service.Models;
 
 namespace MyKaraoke.Core.PlaybackManager {
     public class Playlist {

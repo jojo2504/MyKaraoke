@@ -7,7 +7,7 @@ using MyKaraoke.Service.Logging;
 using System.Windows.Controls;
 using static MyKaraoke.Service.EnvironmentSetup.Constants;
 using MyKaraoke.Core.Library;
-using MyKaraoke.Core.Lyrics;
+using MyKaraoke.Service.Models;
 using System.Windows.Threading;
 using MyKaraoke.Service.Lyrics;
 using System.Windows.Media;
@@ -32,7 +32,6 @@ namespace MyKaraokeApp {
         private string _musicHash = "";
         private string _lastLyricLineText = "";
         private bool _displayCurrentLyricTextTop = true;
-        private bool _displayedFirstLyricText = false;
 
         // Default constructor required by WPF (parameterless)
         public MainWindow() : this([]) {
@@ -65,7 +64,7 @@ namespace MyKaraokeApp {
         }
 
         private void InitializeListViews() {
-            DatabaseSongsListView.ItemsSource = Library.Songs;
+            DatabaseSongsListView.ItemsSource = Library.GetAllSongs();
             SongListView.ItemsSource = _playlist.Songs;
             Logger.Success("Initialized ListViews");
         }
@@ -75,12 +74,6 @@ namespace MyKaraokeApp {
             CollectionViewSource.GetDefaultView(DatabaseSongsListView.ItemsSource)?.Refresh();
             Logger.Success("Updated Library");
         }
-
-        private void AddSongToLibrary(Song song) {
-            Library.AddSongToLibrary(song);
-            DatabaseSongsListView.ItemsSource = Library.Songs;
-        }
-
 
         private void InitializePlayback() {
             _playlist = new Playlist();
@@ -215,7 +208,7 @@ namespace MyKaraokeApp {
             if (displayedLyricLine != null) {
                 if (displayedLyricLine.Text != _lastLyricLineText) {
                     _lastLyricLineText = displayedLyricLine.Text;
-                    var timeBeforeFadingOut = displayedLyricLine.Duration.Seconds + nextLyricLine.Duration.Seconds/2;
+                    var timeBeforeFadingOut = displayedLyricLine.Duration.Seconds + nextLyricLine.Duration.Seconds / 2;
                     if (displayedLyricLine.Text != "") {
                         if (!_displayCurrentLyricTextTop) {
                             CurrentLyricTextBlock.Text = displayedLyricLine.Text;
@@ -279,14 +272,6 @@ namespace MyKaraokeApp {
             _playback.LyricSync.ParseLyrics(lyrics);
         }
 
-        private void DeleteSongButton_Click(object sender, RoutedEventArgs e) {
-            if (SongListView.SelectedItem is Song selectedSong) {
-                _playlist.RemoveSong(selectedSong);
-                SongListView.Items.Refresh();
-                // Optional: Add database delete method here
-            }
-        }
-
         private void SkipButton_Click(object sender, RoutedEventArgs e) {
             _playback.Skip();
         }
@@ -339,16 +324,25 @@ namespace MyKaraokeApp {
                 return;
             }
             // Add the selected song to the playlist
-            _playlist.Songs.Add(selectedSong);
+            _playlist.AddSong(selectedSong);
             Logger.Log($"Added '{selectedSong.Title}' to the playlist via context menu.");
         }
 
         private void RemoveSong_Click(object sender, RoutedEventArgs e) {
-            Logger.Log("RemoveSong_Click");
+            var menuItem = sender as MenuItem;
+            // Get the DataContext of the MenuItem (the song that was right-clicked)
+            var selectedSong = menuItem?.DataContext as Song;
+            if (selectedSong == null) {
+                Logger.Log("No song selected");
+                return;
+            }
+            _playlist.RemoveSong(selectedSong);
         }
 
-        private void DeleteSongButton(object sender, RoutedEventArgs e) {
-            Logger.Log("DeleteSongButton");
+        private void DeleteSong_Click(object sender, RoutedEventArgs e) {
+            var menuItem = sender as MenuItem;
+            var selectedSong = menuItem?.DataContext as Song;
+            Library.RemoveSongFromLibrary(selectedSong);
         }
 
         private void PauseResume_Click(object sender, RoutedEventArgs e) {
@@ -364,6 +358,7 @@ namespace MyKaraokeApp {
 
         private void ModifySong_Click(object sender, RoutedEventArgs e) {
             Logger.Log("ModifySong_Click");
+            throw new NotImplementedException();
         }
 
         private void PlayNow_Click(object sender, RoutedEventArgs e) {

@@ -1,5 +1,7 @@
+using System.Globalization;
 using Microsoft.Data.Sqlite;
 using MyKaraoke.Service.Logging;
+using MyKaraoke.Service.Models;
 using static MyKaraoke.Service.EnvironmentSetup.Constants;
 
 namespace MyKaraoke.Service.Database {
@@ -45,7 +47,7 @@ namespace MyKaraoke.Service.Database {
         public static void UploadSong(string title, string artist, string vocalHash, string musicHash, string LRCHash) {
             var command = new SqliteCommand();
             command.CommandText = "INSERT INTO Songs (Title, Artist, VocalHash, MusicHash, LRCHash) VALUES (@Title, @Artist, @VocalHash, @MusicHash, @LRCHash)";
-            command.Parameters.AddWithValue("@Title", title);
+            command.Parameters.AddWithValue("@Title", CultureInfo.CurrentCulture.TextInfo.ToTitleCase(title.ToLower()));
             command.Parameters.AddWithValue("@Artist", artist);
             command.Parameters.AddWithValue("@VocalHash", vocalHash);
             command.Parameters.AddWithValue("@MusicHash", musicHash);
@@ -58,8 +60,19 @@ namespace MyKaraoke.Service.Database {
             }
         }
 
-        public static void PrintDatabase() {
+        public static void DeleteSongFromDatabase(Song song){
+            if (song == null) return;
+            var command = new SqliteCommand();
+            command.CommandText = $"DELETE FROM Songs WHERE songID = {song.Id}";
+            try {
+                SQLiteManager.DatabaseExecuteCommand(command, successMessage: $"Song '{song.Title}' deleted successfully.");
+            }
+            catch (Exception ex) {
+                Logger.Error($"Error uploading song: {ex.Message}");
+            }
+        }
 
+        public static void PrintDatabase() {
             var command = new SqliteCommand {
                 CommandText = "SELECT * FROM Songs"
             };

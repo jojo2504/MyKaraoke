@@ -6,6 +6,7 @@ using MyKaraoke.Service.Logging;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using MyKaraoke.Core.Lyrics;
+using MyKaraoke.Service.Models;
 
 namespace MyKaraoke.Core.PlaybackManager {
     public class Playback {

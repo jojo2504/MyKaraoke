@@ -1,11 +1,11 @@
-using MyKaraoke.Core.PlaybackManager;
 using MyKaraoke.Service.Database;
 using Microsoft.Data.Sqlite;
 using System.Collections.ObjectModel;
+using MyKaraoke.Service.Models;
 
 namespace MyKaraoke.Core.Library {
     public class Library {
-        public static ObservableCollection<Song> Songs = [];
+        private static ObservableCollection<Song> Songs = [];
 
         static Library() {
             FetchAllSongs();
@@ -29,18 +29,29 @@ namespace MyKaraoke.Core.Library {
                     });
                 }
             }
+            SortSongs();
         }
 
         public static ObservableCollection<Song> GetAllSongs() {
             return Songs;
         }
 
-        public static void AddSongToLibrary(Song song){
+        public static void AddSongToLibrary(Song song) {
             Songs.Add(song);
+            SortSongs();
         }
 
-        public static void RemoveSongFromLibrary(Song song){
+        public static void RemoveSongFromLibrary(Song song) {
+            DatabaseHelper.DeleteSongFromDatabase(song);
             Songs.Remove(song);
+        }
+
+        private static void SortSongs() {
+            var sortedSongs = Songs.OrderBy(song => song.Title.ToLower()).ToList();
+            Songs.Clear();
+            foreach (var song in sortedSongs) {
+                Songs.Add(song);
+            }
         }
     }
 }
