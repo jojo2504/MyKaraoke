@@ -8,7 +8,7 @@ namespace MyKaraoke.Service.EnvironmentSetup {
         public static string BaseAppDataPath { get; }
         public static string LogsPath { get; }
         public static string DatabasePath { get; }
-        public static string SongsPath { get; }
+        public static string FilesPath { get; }
 
         public static DirectoryInfo TryGetSolutionDirectoryInfo(string currentPath = null) {
             var directory = new DirectoryInfo(
@@ -17,6 +17,12 @@ namespace MyKaraoke.Service.EnvironmentSetup {
                 directory = directory.Parent;
             }
             return directory;
+        }
+
+        public static void ResetFileDirectory(){
+            if (Directory.Exists(FilesPath)){
+                Directory.Delete(FilesPath, true);
+            }
         }
 
         static ConfigLoader() {
@@ -61,19 +67,19 @@ namespace MyKaraoke.Service.EnvironmentSetup {
                         databasePath
                     );
 
-                    var songsConfig = databaseConfig.GetProperty("Songs");
-                    string songsDirectoryPath = songsConfig.GetProperty("Path").GetString()!;
+                    var filesConfig = databaseConfig.GetProperty("Files");
+                    string filesDirectoryPath = filesConfig.GetProperty("Path").GetString()!;
 
-                    SongsPath = Path.Combine(
+                    FilesPath = Path.Combine(
                         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                        songsDirectoryPath
+                        filesDirectoryPath
                     );
                 }
 
                 // Create directories if they don't exist
                 Directory.CreateDirectory(BaseAppDataPath);
                 Directory.CreateDirectory(LogsPath);
-                Directory.CreateDirectory(SongsPath);
+                Directory.CreateDirectory(FilesPath);
             }
             catch (Exception ex) {
                 throw new InvalidOperationException("Failed to initialize configuration", ex);

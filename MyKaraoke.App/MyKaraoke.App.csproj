@@ -12,4 +12,12 @@
     <ProjectReference Include="..\MyKaraoke.Service\MyKaraoke.Service.csproj" />
     <ProjectReference Include="..\MyKaraoke.Core\MyKaraoke.Core.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="assets\play_icon.png" />
+    <Resource Include="assets\add_playlist_icon.png" />
+    <Resource Include="assets\settings_icon.png" />
+    <Resource Include="assets\delete_icon.png" />
+  </ItemGroup>
+
 </Project>

@@ -3,14 +3,11 @@ using Microsoft.VisualBasic.Logging;
 using MyKaraoke.Service.Database;
 using MyKaraoke.Service.Logging;
 using System.Collections.ObjectModel;
+using MyKaraoke.Service.Models;
 
 namespace MyKaraoke.Core.PlaybackManager {
     public class Playlist {
-        public ObservableCollection<Song> Songs { get; private set; }
-
-        public Playlist() {
-            Songs = new ObservableCollection<Song>();
-        }
+        public ObservableCollection<Song> Songs { get; private set; } = new ObservableCollection<Song>();
 
         public Song Next() {
             if (Songs.Count == 0) return null;

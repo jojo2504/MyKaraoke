@@ -6,10 +6,10 @@ using static MyKaraoke.Service.EnvironmentSetup.Constants;
 
 namespace MyKaraoke.Service.Database {
     public static class FileHasher {
-        private static string GetFilePathFromHash(string hash) {
+        public static string GetFilePathFromHash(string hash) {
             string subDir1 = hash.Substring(0, 2); // First 2 characters
             string subDir2 = hash.Substring(2, 2); // Next 2 characters
-            string fileDir = Path.Combine(SongsPath, subDir1, subDir2);
+            string fileDir = Path.Combine(FilesPath, subDir1, subDir2);
             Directory.CreateDirectory(fileDir);  // Ensure directories exist
 
             Logger.Log(Path.Combine(fileDir, hash));
@@ -32,14 +32,30 @@ namespace MyKaraoke.Service.Database {
                     using (var stream = File.OpenRead(filePath)) {
                         byte[] hash = sha256.ComputeHash(stream);
                         var hashString = BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
-                        
+
                         Logger.Success($"Hash Version => {hashString}");
                         return hashString;
                     }
                 }
             }
             catch (Exception ex) {
-                Logger.Error(ex);
+                Logger.Error($"Error computing hash: {ex.Message}");
+                return null;
+            }
+        }
+
+        public static string ComputeSHA256FromBytes(byte[] inputBytes) {
+            try {
+                using (var sha256 = SHA256.Create()) {
+                    byte[] hashBytes = sha256.ComputeHash(inputBytes); // Compute SHA-256 hash
+
+                    string hashString = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
+
+                    return hashString;
+                }
+            }
+            catch (Exception ex) {
+                Logger.Error($"Error computing hash: {ex.Message}");
                 return null;
             }
         }

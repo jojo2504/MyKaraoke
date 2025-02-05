@@ -1,21 +1,34 @@
+using System.Text;
 using Microsoft.Data.Sqlite;
 using Microsoft.VisualBasic.Logging;
 using MyKaraoke.Service.Database;
 using MyKaraoke.Service.Logging;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
+using MyKaraoke.Core.Lyrics;
+using MyKaraoke.Service.Models;
 
 namespace MyKaraoke.Core.PlaybackManager {
     public class Playback {
         public Playlist Playlist;
-        public Song CurrentSong = null;
+        private Song _currentSong;
+        public Song CurrentSong {
+            get => _currentSong;
+            set {
+                if (_currentSong != value) {
+                    _currentSong = value;
+                    OnCurrentSongChanged();  // Raise the event when the song changes
+                }
+            }
+        }
+        public bool IsPaused = false;
+        public LyricSync LyricSync = new LyricSync();
 
         // Audio readers and output devices
         public CustomMp3FileReader VocalMp3Reader;
         private CustomMp3FileReader _musicMp3Reader;
         private readonly WaveOutEvent _vocalOutput;
         private readonly WaveOutEvent _musicOutput;
-        private double BytesPerMillisecond { get; set; }
 
         // Volume properties
         private float _generalVolume = 0.5f;
@@ -34,6 +47,11 @@ namespace MyKaraoke.Core.PlaybackManager {
             }
         }
 
+        public event EventHandler CurrentSongChanged;
+        protected virtual void OnCurrentSongChanged() {
+            CurrentSongChanged?.Invoke(this, EventArgs.Empty);
+        }
+
         public void Play() {
             try {
                 // Retrieve audio data from database
@@ -49,11 +67,11 @@ namespace MyKaraoke.Core.PlaybackManager {
                 VocalMp3Reader?.Dispose();
 
                 var vocalMemoryStream = new MemoryStream(vocalData);
-                Logger.Important($"vocalMemoryStream.Length => {vocalMemoryStream.Length}");
+                Logger.Log($"vocalMemoryStream.Length => {vocalMemoryStream.Length}");
 
                 VocalMp3Reader = new CustomMp3FileReader(vocalMemoryStream, CalculateBytesPerMillisecond(vocalData));
-                Logger.Important($"VocalMp3Reader.TotalTime => {VocalMp3Reader.TotalTime}");
-                Logger.Important($"VocalMp3Reader.TotalTimeInMilliseconds => {VocalMp3Reader.TotalTime.TotalMilliseconds}");
+                Logger.Log($"VocalMp3Reader.TotalTime => {VocalMp3Reader.TotalTime}");
+                Logger.Log($"VocalMp3Reader.TotalTimeInMilliseconds => {VocalMp3Reader.TotalTime.TotalMilliseconds}");
 
                 var vocalPcmStream = new MediaFoundationResampler(VocalMp3Reader, WaveFormat.CreateIeeeFloatWaveFormat(44100, 2));
                 vocalPcmStream.ResamplerQuality = 60;
@@ -75,9 +93,12 @@ namespace MyKaraoke.Core.PlaybackManager {
                 UpdateVolume();
 
                 // Attach event handlers for playback stopped
-                _vocalOutput.PlaybackStopped += OnPlaybackStopped;
-                _musicOutput.PlaybackStopped += OnPlaybackStopped;
-
+                if (VocalMp3Reader.TotalTime < _musicMp3Reader.TotalTime) {
+                    _vocalOutput.PlaybackStopped += OnPlaybackStopped;
+                }
+                else {
+                    _musicOutput.PlaybackStopped += OnPlaybackStopped;
+                }
 
                 Logger.Log($"Now playing: {CurrentSong.Title}");
             }
@@ -119,34 +140,28 @@ namespace MyKaraoke.Core.PlaybackManager {
                 if (VocalMp3Reader != null && _musicMp3Reader != null &&
                     VocalMp3Reader.Position >= VocalMp3Reader.Length &&
                     _musicMp3Reader.Position >= _musicMp3Reader.Length) {
-
+                    
                     // Clean up resources for the current song
                     VocalMp3Reader?.Dispose();
                     _musicMp3Reader?.Dispose();
                     VocalMp3Reader = null;
                     _musicMp3Reader = null;
+                    
+                    _currentSong = Playlist.Next(); // For some reasons, 'CurrentSong = Playlist.Next()' doesn't work XD
+                    CurrentSong = _currentSong;
 
-                    // Move to the next song
-                    CurrentSong = Playlist.Next();
                     if (CurrentSong != null) {
                         Play();
                     }
                     else {
-                        // No more songs in the playlist
                         Logger.Log("Playlist is empty.");
                     }
                 }
-
-                // Log any errors during playback
-                if (e.Exception != null) {
-                    Logger.Error($"Playback stopped due to an error: {e.Exception.Message}");
-                }
             }
             catch (Exception ex) {
-                Logger.Fatal(ex);
+                Logger.Fatal($"OnPlaybackStopped CRASH : {ex}");
             }
         }
-
 
         public void Stop() {
             try {
@@ -161,6 +176,18 @@ namespace MyKaraoke.Core.PlaybackManager {
             catch (Exception ex) {
                 Logger.Error(ex.Message);
             }
+        }
+
+        public void Resume() {
+            Logger.Log("Resuming the song");
+            _vocalOutput?.Play();
+            _musicOutput?.Play();
+        }
+
+        public void Pause() {
+            Logger.Log("Pausing the song");
+            _vocalOutput?.Pause();
+            _musicOutput?.Pause();
         }
 
         public void SetGeneralVolume(float volume) {

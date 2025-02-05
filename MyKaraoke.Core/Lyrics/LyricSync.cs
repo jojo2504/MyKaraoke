@@ -3,21 +3,8 @@ using MyKaraoke.Service.Logging;
 using System.Text.RegularExpressions;
 
 namespace MyKaraoke.Core.Lyrics {
-    public class LyricLine {
-        public string Text { get; set; }
-        public TimeSpan StartTime { get; set; }
-        public TimeSpan Duration { get; set; }
-        public bool IsHighlighted { get; set; }
-
-        public bool IsActive(TimeSpan currentPosition) {
-            return currentPosition >= StartTime &&
-                   currentPosition <= (StartTime + Duration);
-        }
-    }
-
     public class LyricSync {
         public List<LyricLine> Lines { get; private set; } = new List<LyricLine>();
-
         public void ParseLyrics(string lyricsContent) {
             Lines.Clear();
             Logger.Log($"Input length: {lyricsContent.Length}");
@@ -26,7 +13,7 @@ namespace MyKaraoke.Core.Lyrics {
             var regex = new Regex(@"\[(\d{2}:\d{2}\.\d{2})\](.*)");
 
             var wordMatches = regex.Matches(lyricsContent);
-            if (wordMatches.Count == 0){
+            if (wordMatches.Count == 0) {
                 regex = new Regex(@"\[(\d{2}:\d{2}\.\d{3})\](.*)");
                 wordMatches = regex.Matches(lyricsContent);
             }
@@ -34,7 +21,7 @@ namespace MyKaraoke.Core.Lyrics {
 
             for (int i = 0; i < wordMatches.Count; i++) {
                 var match = wordMatches[i];
-                if (i == 0){
+                if (i == 0) {
                     Logger.Log($"{match.Groups[0].Value}".Trim());
                     Logger.Log($"{match.Groups[1].Value}");
                     Logger.Log($"{match.Groups[2].Value}".Trim());
@@ -44,8 +31,8 @@ namespace MyKaraoke.Core.Lyrics {
                     string text = match.Groups[2].Value.Trim();
                     TimeSpan endTime;
 
-                    if (i < wordMatches.Count-1) {
-                        if (!TimeSpan.TryParse("0:" + wordMatches[i+1].Groups[1].Value, out endTime)) {
+                    if (i < wordMatches.Count - 1) {
+                        if (!TimeSpan.TryParse("0:" + wordMatches[i + 1].Groups[1].Value, out endTime)) {
                             endTime = startTime + TimeSpan.FromMilliseconds(500);
                         }
                     }
@@ -56,6 +43,7 @@ namespace MyKaraoke.Core.Lyrics {
                     Lines.Add(new LyricLine {
                         Text = text,
                         StartTime = startTime,
+                        EndTime = endTime,
                         Duration = endTime - startTime,
                         IsHighlighted = false
                     });
@@ -64,13 +52,12 @@ namespace MyKaraoke.Core.Lyrics {
 
             Lines.Sort((a, b) => a.StartTime.CompareTo(b.StartTime));
             Logger.Log($"Lines parsed: {Lines.Count}");
-            if (Lines.Count == 0) {
-                Logger.Fatal("xd");
-            }
 
-            Logger.Important("Printing all lines in lines");
-            foreach (var line in Lines) {
-                Logger.Log($"{line.StartTime}: {line.Text}");
+            if (Lines.Count > 0) {
+                Logger.Important("Printing all lines in lines");
+                foreach (var line in Lines) {
+                    Logger.Log($"{line.StartTime}: {line.Text}");
+                }
             }
         }
 
@@ -87,6 +74,16 @@ namespace MyKaraoke.Core.Lyrics {
             }
 
             // If no lyric is found, return null
+            return null;
+        }
+
+        public LyricLine GetNextLyric(double currentTime) {
+            var nextLyric = Lines.FirstOrDefault(l =>
+                l.StartTime.TotalMilliseconds > currentTime && !string.IsNullOrWhiteSpace(l.Text));
+            if (nextLyric != null) {
+                nextLyric.IsHighlighted = true;
+                return nextLyric;
+            }
             return null;
         }
     }
