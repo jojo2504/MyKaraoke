@@ -6,6 +6,7 @@ namespace MyKaraoke.Core.Lyrics {
     public class LyricLine {
         public string Text { get; set; }
         public TimeSpan StartTime { get; set; }
+        public TimeSpan EndTime { get; set; }
         public TimeSpan Duration { get; set; }
         public bool IsHighlighted { get; set; }
 

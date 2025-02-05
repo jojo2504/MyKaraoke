@@ -1,27 +1,27 @@
-﻿using System.Windows;
-using Microsoft.Win32;
-using MyKaraoke.Core.PlaybackManager;
-using MyKaraoke.Service.Database;
-using System.IO;
-using MyKaraoke.Service.Logging;
-using System.Windows.Controls;
-using static MyKaraoke.Service.EnvironmentSetup.Constants;
-using MyKaraoke.Core.Library;
-using MyKaraoke.Service.Models;
-using System.Windows.Threading;
-using MyKaraoke.Service.Lyrics;
-using System.Windows.Media;
-using System.Globalization; // For CultureInfo
-using System.Windows.Data;
-using MyKaraoke.Service.EnvironmentSetup;
-using Microsoft.Data.Sqlite;
+﻿using System.IO;
 using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Media.Imaging;
+using System.Windows;
+using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Controls;
+using System.Windows.Threading;
 using System.Windows.Media.Animation; // For IValueConverter
 
-namespace MyKaraokeApp {
+using MyKaraoke.Service.Models;
+using MyKaraoke.Service.Lyrics;
+using MyKaraoke.Service.Logging;
+using MyKaraoke.Service.Database;
+using MyKaraoke.Service.EnvironmentSetup;
+using static MyKaraoke.Service.EnvironmentSetup.Constants;
+
+using MyKaraoke.Core.Library;
+using MyKaraoke.Core.PlaybackManager;
+
+using Microsoft.Win32;
+using MyKaraoke.Core.Lyrics;
+
+
+namespace MyKaraokeApp.Windows {
     public partial class MainWindow : Window {
         private Window _lyricsWindow;
         private Playlist _playlist;
@@ -202,25 +202,25 @@ namespace MyKaraokeApp {
         }
 
         private void UpdateLyricDisplay(double currentTime) {
-            var displayedLyricLine = _playback.LyricSync.GetCurrentLyric(currentTime);
-            var nextLyricLine = _playback.LyricSync.GetCurrentLyric(currentTime);
+            var currentLyricLine = _playback.LyricSync.GetCurrentLyric(currentTime);
+            var nextLyricLine = _playback.LyricSync.GetNextLyric(currentTime);
 
-            if (displayedLyricLine != null) {
-                if (displayedLyricLine.Text != _lastLyricLineText) {
-                    _lastLyricLineText = displayedLyricLine.Text;
-                    var timeBeforeFadingOut = displayedLyricLine.Duration.Seconds + nextLyricLine.Duration.Seconds / 2;
-                    if (displayedLyricLine.Text != "") {
+            if (currentLyricLine != null) {
+                if (currentLyricLine.Text != _lastLyricLineText) {
+                    _lastLyricLineText = currentLyricLine.Text;
+                    var timeBeforeFadingOut = currentLyricLine.Duration.Seconds + Math.Max(currentLyricLine.Duration.Seconds/2, 0.6);
+                    if (currentLyricLine.Text != "") {
                         if (!_displayCurrentLyricTextTop) {
-                            CurrentLyricTextBlock.Text = displayedLyricLine.Text;
+                            CurrentLyricTextBlock.Text = currentLyricLine.Text;
                             StartLyricsAnimation(CurrentLyricTextBlock, timeBeforeFadingOut);
                         }
                         else {
-                            NextLyricTextBlock.Text = displayedLyricLine.Text;
+                            NextLyricTextBlock.Text = currentLyricLine.Text;
                             StartLyricsAnimation(NextLyricTextBlock, timeBeforeFadingOut);
                         }
                         _displayCurrentLyricTextTop = !_displayCurrentLyricTextTop;
                     }
-                    Logger.Log($"{currentTime} currentLyric => {displayedLyricLine.Text}");
+                    Logger.Log($"startTime: {currentLyricLine.StartTime}, endTime: {currentLyricLine.EndTime} => {currentLyricLine.Text}");
                 }
             }
             else {
@@ -380,7 +380,7 @@ namespace MyKaraokeApp {
             }
         }
 
-        private void StartLyricsAnimation(TextBlock textBlock, long FadeOutBeginTime) {
+        private void StartLyricsAnimation(TextBlock textBlock, double FadeOutBeginTime) {
             // Clear the local value first
             textBlock.ClearValue(UIElement.OpacityProperty);
 
@@ -389,7 +389,7 @@ namespace MyKaraokeApp {
             var fadeIn = new DoubleAnimation {
                 From = 0,
                 To = 1,
-                Duration = TimeSpan.FromSeconds(0.6),
+                Duration = TimeSpan.FromSeconds(0.3),
                 AutoReverse = false,
                 FillBehavior = FillBehavior.HoldEnd
             };

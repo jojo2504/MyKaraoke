@@ -5,7 +5,6 @@ using System.Text.RegularExpressions;
 namespace MyKaraoke.Core.Lyrics {
     public class LyricSync {
         public List<LyricLine> Lines { get; private set; } = new List<LyricLine>();
-
         public void ParseLyrics(string lyricsContent) {
             Lines.Clear();
             Logger.Log($"Input length: {lyricsContent.Length}");
@@ -44,6 +43,7 @@ namespace MyKaraoke.Core.Lyrics {
                     Lines.Add(new LyricLine {
                         Text = text,
                         StartTime = startTime,
+                        EndTime = endTime,
                         Duration = endTime - startTime,
                         IsHighlighted = false
                     });
@@ -79,7 +79,7 @@ namespace MyKaraoke.Core.Lyrics {
 
         public LyricLine GetNextLyric(double currentTime) {
             var nextLyric = Lines.FirstOrDefault(l =>
-                l.StartTime.TotalMilliseconds > currentTime);
+                l.StartTime.TotalMilliseconds > currentTime && !string.IsNullOrWhiteSpace(l.Text));
             if (nextLyric != null) {
                 nextLyric.IsHighlighted = true;
                 return nextLyric;

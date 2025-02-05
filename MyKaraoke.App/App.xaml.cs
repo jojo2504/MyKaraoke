@@ -1,8 +1,5 @@
-﻿using System.Configuration;
-using System.Data;
-using System.Windows;
-using MyKaraoke.Core.PlaybackManager;
-using System.Threading;
+﻿using System.Windows;
+using MyKaraokeApp.Windows;
 using MyKaraoke.Service.Logging;
 
 namespace MyKaraokeApp;
