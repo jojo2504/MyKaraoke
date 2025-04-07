@@ -1,5 +1,8 @@
 using Microsoft.VisualBasic.Logging;
+using MyKaraoke.Core.Models;
+using MyKaraoke.Core.PlaybackManager;
 using MyKaraoke.Service.Logging;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace MyKaraoke.Core.Lyrics {
@@ -85,6 +88,12 @@ namespace MyKaraoke.Core.Lyrics {
                 return nextLyric;
             }
             return null;
+        }
+
+        public static void LoadLyrics(Playback playback) {
+            byte[] LRCData = playback.CurrentSong.GetLRCData();
+            string lyrics = Encoding.UTF8.GetString(LRCData);
+            playback.LyricSync.ParseLyrics(lyrics);
         }
     }
 }

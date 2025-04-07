@@ -1,18 +1,27 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.VisualBasic.Logging;
-using MyKaraoke.Service.Database;
+using MyKaraoke.Core.Database;
 using MyKaraoke.Service.Logging;
 using System.Collections.ObjectModel;
-using MyKaraoke.Service.Models;
+using MyKaraoke.Core.Models;
 
 namespace MyKaraoke.Core.PlaybackManager {
     public class Playlist {
         public ObservableCollection<Song> Songs { get; private set; } = new ObservableCollection<Song>();
+        private Random random = new Random();
 
-        public Song Next() {
+        public Song Next(bool shuffling = false) {
+            Song nextSong;
             if (Songs.Count == 0) return null;
-            var nextSong = Songs[0];
-            Songs.RemoveAt(0); // Remove the song from the playlist
+            if (shuffling) {
+                var song_index = random.Next(Songs.Count);
+                nextSong = Songs[song_index];
+                Songs.RemoveAt(song_index);
+            }
+            else {
+                nextSong = Songs[0];
+                Songs.RemoveAt(0); // Remove the song from the playlist
+            }
             return nextSong;
         }
 

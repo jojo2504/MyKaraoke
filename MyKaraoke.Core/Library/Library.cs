@@ -1,11 +1,12 @@
-using MyKaraoke.Service.Database;
+using MyKaraoke.Core.Database;
 using Microsoft.Data.Sqlite;
 using System.Collections.ObjectModel;
-using MyKaraoke.Service.Models;
+using MyKaraoke.Core.Models;
+using System.Windows;
 
 namespace MyKaraoke.Core.Library {
-    public class Library {
-        private static ObservableCollection<Song> Songs = [];
+    public static class Library {
+        public static ObservableCollection<Song> Songs = [];
 
         static Library() {
             FetchAllSongs();

@@ -1,4 +1,3 @@
-using MyKaraoke.Service.Logging;
 namespace MyKaraoke.Service.EnvironmentSetup{
     public static class Constants {
         public static string BaseAppDataPath => ConfigLoader.BaseAppDataPath;

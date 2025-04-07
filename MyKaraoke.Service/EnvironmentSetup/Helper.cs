@@ -1,5 +1,3 @@
-using MyKaraoke.Service.Logging;
-
 namespace MyKaraoke.Service.EnvironmentSetup {
     public static class Helper {
         public static DirectoryInfo GetSolutionDirectoryInfo(string currentPath = null) {

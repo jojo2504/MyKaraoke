@@ -1,5 +1,5 @@
 ﻿using System.Windows;
-using MyKaraokeApp.Windows;
+using MyKaraokeApp.MainWindows;
 using MyKaraoke.Service.Logging;
 
 namespace MyKaraokeApp;

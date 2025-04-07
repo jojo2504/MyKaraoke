@@ -14,10 +14,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="assets\play_icon.png" />
-    <Resource Include="assets\add_playlist_icon.png" />
-    <Resource Include="assets\settings_icon.png" />
-    <Resource Include="assets\delete_icon.png" />
+    <Resource Include="Assets\play_icon.png" />
+    <Resource Include="Assets\add_playlist_icon.png" />
+    <Resource Include="Assets\settings_icon.png" />
+    <Resource Include="Assets\delete_icon.png" />
   </ItemGroup>
 
 </Project>
